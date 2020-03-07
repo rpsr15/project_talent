@@ -11,9 +11,16 @@ import { Pagination, Icon, Dropdown, Checkbox, Accordion, Form, Segment, Card, B
 
 class JobCard extends React.Component {
 
-    render() {
+
+render() {
+    let statusButton;
+    if (this.props.status == 0) {
+        statusButton = <Button size='tiny' color='green'>Active</Button>;
+    } else {
+        statusButton = <Button size='tiny' color='red'>Expired</Button>;
+    }
         return (
-            <Card style={{ width: "28rem", height: "22rem" }}>
+            <Card style={{ width: "25rem", height: "22rem" }}>
                 <Card.Content>
 
                     <Card.Header>{this.props.title}</Card.Header>
@@ -22,10 +29,11 @@ class JobCard extends React.Component {
                     </Label>
                     <br />
                     <Card.Meta>{this.props.location.city + "," + this.props.location.country}</Card.Meta>
-                    <Card.Description>{this.props.description}</Card.Description>
+                    <Card.Description>{this.props.description.substring(0,200)}</Card.Description>
                 </Card.Content>
                 <Card.Content extra>
-                        <Button size='tiny' color='red'>Expired</Button>
+                    {statusButton}
+                   
                     <ButtonGroup style={{float:"right"}}>
                         <Button basic size='tiny' color='blue' >
                             <Icon size='small' name='window close outline'/>
@@ -115,7 +123,7 @@ export default class ManageJob extends React.Component {
                 this.setState({
                     loadJobs: res.myJobs
                 });
-                console.log(res.myJobs);
+                console.log("here",res.myJobs);
             }.bind(this)
         });
     }
@@ -136,7 +144,7 @@ export default class ManageJob extends React.Component {
 
 
     render() {
-        console.log("rendering", this.state.loadJobs);
+        console.log("rendering", this.state.loadJobs.length);
 
         return (
             <BodyWrapper reload={this.init} loaderData={this.state.loaderData}>
@@ -165,13 +173,13 @@ export default class ManageJob extends React.Component {
                     </div>
 
                     <p> </p>
-                    <Card.Group itemsPerRow={4}>
+                    <Card.Group itemsPerRow={5}>
                         <jobCards jobs={this.state.loadJobs} />
                         {
-                            this.state.loadJobs.map((job) => <JobCard key={job.id} title={job.title} location={job.location} description={job.summary} />)
+                            this.state.loadJobs.map((job) => <JobCard key={job.id} title={job.title} location={job.location} description={job.summary} status={job.status} />)
                         }
                     </Card.Group>
-                    <div style={{ "text-align": "center", "margin-top": "1rem", "margin-bottom": "1rem" }}>
+                    <div style={{ "textAlign": "center", "marginTop": "1rem", "marginBottom": "1rem" }}>
                         <Pagination
                             boundaryRange={0}
                             defaultActivePage={1}
@@ -179,7 +187,7 @@ export default class ManageJob extends React.Component {
                             firstItem={null}
                             lastItem={null}
                             siblingRange={1}
-                            totalPages={1}
+                            totalPages={(Math.ceil(this.state.loadJobs / 6.0))}
                         />
                     </div>
 
