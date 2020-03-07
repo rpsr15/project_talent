@@ -5,8 +5,47 @@ import LoggedInBanner from '../../Layout/Banner/LoggedInBanner.jsx';
 import { LoggedInNavigation } from '../../Layout/LoggedInNavigation.jsx';
 import { JobSummaryCard } from './JobSummaryCard.jsx';
 import { BodyWrapper, loaderData } from '../../Layout/BodyWrapper.jsx';
-import { Pagination, Icon, Dropdown, Checkbox, Accordion, Form, Segment } from 'semantic-ui-react';
+import { Pagination, Icon, Dropdown, Checkbox, Accordion, Form, Segment, Card, Button, Image, Label, ButtonGroup } from 'semantic-ui-react';
 
+
+
+class JobCard extends React.Component {
+
+    render() {
+        return (
+            <Card style={{ width: "28rem", height: "22rem" }}>
+                <Card.Content>
+
+                    <Card.Header>{this.props.title}</Card.Header>
+                    <Label color='black' ribbon='right'>
+                        <Icon name='user'><span style={{ display: "inline-block", width: "8px" }}></span>0</Icon>
+                    </Label>
+                    <br />
+                    <Card.Meta>{this.props.location.city + "," + this.props.location.country}</Card.Meta>
+                    <Card.Description>{this.props.description}</Card.Description>
+                </Card.Content>
+                <Card.Content extra>
+                        <Button size='tiny' color='red'>Expired</Button>
+                    <ButtonGroup style={{float:"right"}}>
+                        <Button basic size='tiny' color='blue' >
+                            <Icon size='small' name='window close outline'/>
+                                Close
+                        </Button>
+                        <Button basic size='tiny' color='blue'>
+                            <Icon size='small' name='edit'/>
+                                Edit
+                        </Button>
+                        <Button basic size='tiny' color='blue'>
+                            <Icon size='small' name="copy outline"></Icon>    
+                            Copy
+                        </Button>
+                            </ButtonGroup>
+                    
+                </Card.Content>
+            </Card>
+        );
+    }
+}
 export default class ManageJob extends React.Component {
     constructor(props) {
         super(props);
@@ -58,10 +97,10 @@ export default class ManageJob extends React.Component {
         console.log("loading data");
         var link = 'http://localhost:51689/listing/listing/getSortedEmployerJobs?showActive=true&showClosed=true&showExpired=true&showUnexpired=true';
         var cookies = Cookies.get('talentAuthToken');
-       // your ajax call and other logic goes here
+        // your ajax call and other logic goes here
 
 
-       
+
         $.ajax({
             url: link,
             headers: {
@@ -73,7 +112,10 @@ export default class ManageJob extends React.Component {
             dataType: "json",
             success: function (res) {
                 console.log("Here is the response!");
-                console.log(res);
+                this.setState({
+                    loadJobs: res.myJobs
+                });
+                console.log(res.myJobs);
             }.bind(this)
         });
     }
@@ -92,7 +134,10 @@ export default class ManageJob extends React.Component {
         });
     }
 
+
     render() {
+        console.log("rendering", this.state.loadJobs);
+
         return (
             <BodyWrapper reload={this.init} loaderData={this.state.loaderData}>
                 <div className="ui container">
@@ -105,7 +150,7 @@ export default class ManageJob extends React.Component {
                                 <Dropdown.Item text='Closed' />
                                 <Dropdown.Item text='Expired' />
                                 <Dropdown.Item text='Unexpired' />
-                                
+
                             </Dropdown.Menu>
                         </Dropdown>
                         <Icon name="calendar"> </Icon>
@@ -117,8 +162,28 @@ export default class ManageJob extends React.Component {
 
                             </Dropdown.Menu>
                         </Dropdown>
-                        </div>
-                    
+                    </div>
+
+                    <p> </p>
+                    <Card.Group itemsPerRow={4}>
+                        <jobCards jobs={this.state.loadJobs} />
+                        {
+                            this.state.loadJobs.map((job) => <JobCard key={job.id} title={job.title} location={job.location} description={job.summary} />)
+                        }
+                    </Card.Group>
+                    <div style={{ "text-align": "center", "margin-top": "1rem", "margin-bottom": "1rem" }}>
+                        <Pagination
+                            boundaryRange={0}
+                            defaultActivePage={1}
+                            ellipsisItem={null}
+                            firstItem={null}
+                            lastItem={null}
+                            siblingRange={1}
+                            totalPages={1}
+                        />
+                    </div>
+
+
                 </div>
             </BodyWrapper>
 
