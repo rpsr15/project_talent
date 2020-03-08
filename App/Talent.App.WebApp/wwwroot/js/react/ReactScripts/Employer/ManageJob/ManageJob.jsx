@@ -35,15 +35,15 @@ render() {
                     {statusButton}
                    
                     <ButtonGroup style={{float:"right"}}>
-                        <Button basic size='tiny' color='blue' >
+                        <Button basic  color='blue' style={{ fontSize: "0.8rem"}} >
                             <Icon size='small' name='window close outline'/>
                                 Close
                         </Button>
-                        <Button basic size='tiny' color='blue'>
+                        <Button basic size='tiny' color='blue' style={{ fontSize: "0.8rem"}} >
                             <Icon size='small' name='edit'/>
                                 Edit
                         </Button>
-                        <Button basic size='tiny' color='blue'>
+                        <Button basic size='tiny' color='blue' style={{ fontSize: "0.8rem"}} >
                             <Icon size='small' name="copy outline"></Icon>    
                             Copy
                         </Button>
@@ -60,8 +60,10 @@ export default class ManageJob extends React.Component {
         let loader = loaderData
         loader.allowedUsers.push("Employer");
         loader.allowedUsers.push("Recruiter");
-        //console.log(loader)
         this.state = {
+            totalPages:1,
+            activePage: 1,
+            startJob:0,
             loadJobs: [],
             loaderData: loader,
             activePage: 1,
@@ -81,6 +83,7 @@ export default class ManageJob extends React.Component {
         this.loadData = this.loadData.bind(this);
         this.init = this.init.bind(this);
         this.loadNewData = this.loadNewData.bind(this);
+        this.handlePaginationChange = this.handlePaginationChange.bind(this);
         //your functions go here
     };
 
@@ -101,9 +104,10 @@ export default class ManageJob extends React.Component {
         this.init();
     };
 
+    
     loadData(callback) {
-        console.log("loading data");
-        var link = 'http://localhost:51689/listing/listing/getSortedEmployerJobs?showActive=true&showClosed=true&showExpired=true&showUnexpired=true';
+        console.log("intial page");
+        var link = `http://localhost:51689/listing/listing/getSortedEmployerJobs?activePage=${this.state.activePage}&showActive=true&showClosed=true&showExpired=true&showUnexpired=true&limit=6`;
         var cookies = Cookies.get('talentAuthToken');
         // your ajax call and other logic goes here
 
@@ -119,11 +123,13 @@ export default class ManageJob extends React.Component {
             contentType: "application/json",
             dataType: "json",
             success: function (res) {
-                console.log("Here is the response!");
+                console.log("Here is the response!",res);
                 this.setState({
+                    totalPages: Math.ceil(res.totalCount/6.0),
                     loadJobs: res.myJobs
                 });
-                console.log("here",res.myJobs);
+                console.log("here", res.myJobs);
+                callback();
             }.bind(this)
         });
     }
@@ -141,10 +147,25 @@ export default class ManageJob extends React.Component {
             })
         });
     }
+    handlePaginationChange(e, data) {
 
+        var loader = this.state.loaderData;
+       loader.isLoading = true;
+        console.log("active page", data.activePage);
+        this.setState({ activePage: data.activePage }, () => {
+            this.loadData(function (res) {
+                loader.isLoading = false;
+                //this.setState({ loaderData })
+                
+            });
+        });
+        loader.isLoading = false;
+       
+        
+    }
 
     render() {
-        console.log("rendering", this.state.loadJobs.length);
+        console.log("rendering", Math.ceil(this.state.loadJobs.length/6.0));
 
         return (
             <BodyWrapper reload={this.init} loaderData={this.state.loaderData}>
@@ -173,11 +194,12 @@ export default class ManageJob extends React.Component {
                     </div>
 
                     <p> </p>
-                    <Card.Group itemsPerRow={5}>
-                        <jobCards jobs={this.state.loadJobs} />
+                    <Card.Group itemsPerRow={3}>
                         {
-                            this.state.loadJobs.map((job) => <JobCard key={job.id} title={job.title} location={job.location} description={job.summary} status={job.status} />)
+                            this.state.loadJobs.map((job,i) => <JobCard key={job.id} title={job.title} location={job.location} description={job.summary} status={job.status} />)
+
                         }
+                      
                     </Card.Group>
                     <div style={{ "textAlign": "center", "marginTop": "1rem", "marginBottom": "1rem" }}>
                         <Pagination
@@ -187,7 +209,8 @@ export default class ManageJob extends React.Component {
                             firstItem={null}
                             lastItem={null}
                             siblingRange={1}
-                            totalPages={(Math.ceil(this.state.loadJobs / 6.0))}
+                            onPageChange={this.handlePaginationChange}
+                            totalPages={this.state.totalPages}
                         />
                     </div>
 
