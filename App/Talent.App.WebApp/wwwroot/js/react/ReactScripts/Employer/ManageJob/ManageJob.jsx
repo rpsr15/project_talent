@@ -82,6 +82,8 @@ export default class ManageJob extends React.Component {
     constructor(props) {
         super(props);
         let loader = loaderData
+        loader.isLoading = false;
+        //console.log("sfsdf");
         loader.allowedUsers.push("Employer");
         loader.allowedUsers.push("Recruiter");
         this.state = {
@@ -109,16 +111,15 @@ export default class ManageJob extends React.Component {
         this.loadNewData = this.loadNewData.bind(this);
         this.handlePaginationChange = this.handlePaginationChange.bind(this);
         this.closeJob = this.closeJob.bind(this);
+        this.startLoader = this.startLoader.bind(this);
     };
 
     init() {
-        console.log("initing");
-        let loaderData = TalentUtil.deepCopy(this.state.loaderData)
-       loaderData.isLoading = false;
-        this.setState({ loaderData });//comment this
 
-        //set loaderData.isLoading to false after getting data
-        this.loadData(() => { loaderData.isLoading = false }
+        this.startLoader();
+        this.loadData(() => {
+            this.stopLoader();
+        }
         )
 
     }
@@ -132,11 +133,11 @@ export default class ManageJob extends React.Component {
 
     }
     loadData(callback) {
-        var link = `http://localhost:51689/listing/listing/getSortedEmployerJobs?activePage=${this.state.activePage}&showActive=true&showClosed=true&showExpired=true&showUnexpired=true&limit=6`;
+        
+        
+        var link = `https://talentservicerpsr15.azurewebsites.net/listing/listing/getSortedEmployerJobs?activePage=${this.state.activePage}&showActive=true&showClosed=true&showExpired=true&showUnexpired=true&limit=6`;
+       // console.log(link);
         var cookies = Cookies.get('talentAuthToken');
-        // your ajax call and other logic goes here
-
-
 
         $.ajax({
             url: link,
@@ -148,11 +149,17 @@ export default class ManageJob extends React.Component {
             contentType: "application/json",
             dataType: "json",
             success: function (res) {
-                console.log("res", res);
-                this.setState({
-                    totalPages: Math.ceil(res.totalCount/6.0),
-                    loadJobs: res.myJobs
-                });
+                
+                if (res.totalCount === 0) {
+                }
+                else {
+                    this.setState({
+                        totalPages: Math.ceil(res.totalCount / 6.0),
+                        loadJobs: res.myJobs
+                    });
+                }
+
+                
              
                 callback();
             }.bind(this)
@@ -172,25 +179,35 @@ export default class ManageJob extends React.Component {
             })
         });
     }
-    handlePaginationChange(e, data) {
+    handlePaginationChange(e, data,callback) {
 
-        var loader = this.state.loaderData;
-       loader.isLoading = true;
+        this.startLoader();
         
         this.setState({ activePage: data.activePage }, () => {
+            
             this.loadData(function (res) {
-                loader.isLoading = false;
-                //this.setState({ loaderData })
+       
                 
             });
         });
-        loader.isLoading = false;
-       
+
+        this.stopLoader();
         
     }
 
+    startLoader() {
+        let loaderData = TalentUtil.deepCopy(this.state.loaderData)
+        loaderData.isLoading = true;
+        this.setState({ loaderData });//comment this
+    }
+    stopLoader() {
+        let loaderData = TalentUtil.deepCopy(this.state.loaderData)
+        loaderData.isLoading = false;
+        this.setState({ loaderData });
+
+    }
     render() {
-      
+        const jobsFound = this.state.loadJobs.length > 0;
 
         return (
             <BodyWrapper reload={this.init} loaderData={this.state.loaderData}>
@@ -219,13 +236,21 @@ export default class ManageJob extends React.Component {
                     </div>
 
                     <p> </p>
-                    <Card.Group itemsPerRow={3}>
-                        {
-                            this.state.loadJobs.map((job, i) => <JobCard key={job.id} id={job.id} title={job.title} location={job.location} description={job.summary} status={job.status} onClose={this.closeJob} />)
 
-                        }
-                      
-                    </Card.Group>
+
+                    {jobsFound ? (
+                        <Card.Group itemsPerRow={3}>
+                            {
+                                this.state.loadJobs.map((job, i) => <JobCard key={job.id} id={job.id} title={job.title} location={job.location} description={job.summary} status={job.status} onClose={this.closeJob} />)
+
+                            }
+
+                        </Card.Group>
+                        
+                    ) : (
+                            <p>No Jobs Found</p>
+                        )}
+                   
                     <div style={{ "textAlign": "center", "marginTop": "1rem", "marginBottom": "1rem" }}>
                         <Pagination
                             boundaryRange={0}
